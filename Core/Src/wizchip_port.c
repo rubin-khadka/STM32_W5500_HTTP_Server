@@ -27,9 +27,8 @@ typedef enum
 
 // Network configuration with DHCP support
 wiz_NetInfo netInfo =
-    {.mac = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01}, .ip = {192, 168, 1, 10}, .sn = {255, 255, 255, 0}, .gw =
-        {192, 168, 1, 1}, .dns = {8, 8, 8, 8}, .dhcp = NETINFO_DHCP    // Use DHCP by default
-    };
+    {.mac = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01}, .ip = {192, 168, 1, 10}, .sn = {255, 255, 255, 0}, .gw = {0, 0, 0, 0}, .dns =
+        {0, 0, 0, 0}, .dhcp = NETINFO_DHCP};
 
 #define W5500_CS_LOW()     HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET)
 #define W5500_CS_HIGH()    HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET)

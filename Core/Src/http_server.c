@@ -25,115 +25,51 @@ static uint8_t tx_buffer[HTTP_BUFFER_SIZE];
 // RTC time cache
 static DS3231_Time_t g_rtc_time;
 
-// HTML Page
-static const char index_page[] =
-    "<!DOCTYPE html>"
-        "<html>"
-        "<head>"
-        "<meta charset='UTF-8'>"
-        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-        "<title>STM32 Environmental Monitor</title>"
-        "<style>"
-        "*{margin:0;padding:0;box-sizing:border-box;}"
-        "body{font-family:'Segoe UI',Arial;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}"
-        ".container{max-width:600px;margin:0 auto;}"
-        ".card{background:white;border-radius:15px;padding:25px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);}"
-        ".time-card{text-align:center;background:linear-gradient(135deg,#1e3c72,#2a5298);color:white;}"
-        ".time{font-size:48px;font-weight:bold;font-family:'Courier New',monospace;}"
-        ".date{font-size:24px;margin-top:10px;}"
-        ".sensor-row{display:flex;justify-content:space-around;margin:20px 0;}"
-        ".sensor-item{text-align:center;}"
-        ".sensor-value{font-size:36px;font-weight:bold;}"
-        ".temp-value{color:#e94560;}"
-        ".hum-value{color:#4CAF50;}"
-        ".led-control{text-align:center;}"
-        ".led-btn{padding:15px 30px;margin:10px;font-size:18px;border:none;border-radius:10px;cursor:pointer;transition:transform 0.2s;}"
-        ".led-btn:active{transform:scale(0.95);}"
-        ".btn-on{background:#4CAF50;color:white;}"
-        ".btn-off{background:#f44336;color:white;}"
-        ".led-status{margin-top:15px;padding:10px;background:#f0f0f0;border-radius:8px;}"
-        ".status-ok{color:#4CAF50;}"
-        ".status-error{color:#f44336;}"
-        ".refresh-time{font-size:12px;color:#999;margin-top:20px;text-align:center;}"
-        "</style>"
-        "</head>"
-        "<body>"
-        "<div class='container'>"
-        "<div class='card time-card'>"
-        "<div class='time' id='time'>--:--:--</div>"
-        "<div class='date' id='date'>----/--/--</div>"
-        "</div>"
-
-        "<div class='card'>"
-        "<h3 style='text-align:center;'>🌡️ Environmental Data</h3>"
-        "<div class='sensor-row'>"
-        "<div class='sensor-item'>"
-        "<div class='sensor-value temp-value' id='temperature'>--°C</div>"
-        "<div class='sensor-label'>Temperature</div>"
-        "</div>"
-        "<div class='sensor-item'>"
-        "<div class='sensor-value hum-value' id='humidity'>--%</div>"
-        "<div class='sensor-label'>Humidity</div>"
-        "</div>"
-        "</div>"
-        "<div id='sensorStatus' style='text-align:center;font-size:12px;'></div>"
-        "</div>"
-
-        "<div class='card'>"
-        "<h3 style='text-align:center;'>💡 LED Control</h3>"
-        "<div class='led-control'>"
-        "<button class='led-btn btn-on' onclick='setLED(1)'>🔴 LED ON</button>"
-        "<button class='led-btn btn-off' onclick='setLED(0)'>⚫ LED OFF</button>"
-        "</div>"
-        "<div class='led-status' id='ledStatus'>LED Status: Unknown</div>"
-        "</div>"
-
-        "<div class='refresh-time'>Data auto-refreshes every 3 seconds</div>"
-        "</div>"
-
-        "<script>"
-        "function updateData(){"
-        "    fetch('/api/data')"
-        "        .then(response => response.json())"
-        "        .then(data => {"
-        "            document.getElementById('temperature').innerHTML = data.temp + '°C';"
-        "            document.getElementById('humidity').innerHTML = data.hum + '%';"
-        "            document.getElementById('time').innerHTML = data.time;"
-        "            document.getElementById('date').innerHTML = data.date;"
-        "            if(data.sensor_valid) {"
-        "                document.getElementById('sensorStatus').innerHTML = '<span class=\"status-ok\">✓ Sensor OK</span>';"
-        "            } else {"
-        "                document.getElementById('sensorStatus').innerHTML = '<span class=\"status-error\">✗ Sensor Error</span>';"
-        "            }"
-        "        })"
-        "        .catch(error => {"
-        "            console.log('Error:', error);"
-        "            document.getElementById('sensorStatus').innerHTML = '<span class=\"status-error\">✗ Connection Error</span>';"
-        "        });"
-        "}"
-        "function setLED(state){"
-        "    let url = state ? '/api/led/on' : '/api/led/off';"
-        "    fetch(url)"
-        "        .then(response => response.json())"
-        "        .then(data => {"
-        "            document.getElementById('ledStatus').innerHTML = 'LED Status: ' + (data.state ? 'ON' : 'OFF');"
-        "        });"
-        "}"
-        "function getLEDStatus(){"
-        "    fetch('/api/led/status')"
-        "        .then(response => response.json())"
-        "        .then(data => {"
-        "            document.getElementById('ledStatus').innerHTML = 'LED Status: ' + (data.state ? 'ON' : 'OFF');"
-        "        });"
-        "}"
-        "// Initial load"
-        "updateData();"
-        "getLEDStatus();"
-        "// Auto refresh every 3 seconds"
-        "setInterval(updateData, 3000);"
-        "</script>"
-        "</body>"
-        "</html>";
+const char index_page[] = "<!DOCTYPE html>"
+    "<html>"
+    "<head>"
+    "<meta charset='UTF-8'>"
+    "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+    "<title>DHT11 Monitor</title>"
+    "<style>"
+    "body{font-family:Arial;background:#1a1a2e;color:white;text-align:center;padding:20px;margin:0}"
+    ".container{max-width:400px;margin:0 auto}"
+    ".card{background:#16213e;padding:30px;border-radius:15px;margin-top:50px}"
+    ".temp{font-size:72px;font-weight:bold;color:#e94560}"
+    ".hum{font-size:48px;font-weight:bold;color:#4CAF50;margin-top:20px}"
+    ".label{font-size:18px;color:#aaa;margin-top:10px}"
+    ".status{font-size:14px;color:#aaa;margin-top:20px}"
+    "</style>"
+    "</head>"
+    "<body>"
+    "<div class='container'>"
+    "<div class='card'>"
+    "<h1>🌡️ DHT11 Monitor</h1>"
+    "<div class='temp' id='temperature'>--°C</div>"
+    "<div class='label'>Temperature</div>"
+    "<div class='hum' id='humidity'>--%</div>"
+    "<div class='label'>Humidity</div>"
+    "<div class='status' id='status'>Loading...</div>"
+    "</div>"
+    "</div>"
+    "<script>"
+    "function updateData(){"
+    " fetch('/api/data')"
+    " .then(r=>r.json())"
+    " .then(data=>{"
+    " document.getElementById('temperature').innerHTML = data.temp + '°C';"
+    " document.getElementById('humidity').innerHTML = data.hum + '%';"
+    " document.getElementById('status').innerHTML = data.sensor_valid ? '✓ Sensor OK' : '✗ Sensor Error';"
+    " })"
+    " .catch(e=>{"
+    " document.getElementById('status').innerHTML = '✗ Connection Error';"
+    " });"
+    "}"
+    "updateData();"
+    "setInterval(updateData, 3000);"
+    "</script>"
+    "</body>"
+    "</html>";
 
 // Function to read DHT11 sensor using your existing driver
 static void ReadDHT11Sensor(void)
@@ -164,7 +100,7 @@ static void ReadDHT11Sensor(void)
     g_sensor_data.valid = 1;
 
     char msg[50];
-    sprintf(msg, "DHT11: %.0f°C, %.0f%%\r\n", g_sensor_data.temperature, g_sensor_data.humidity);
+    sprintf(msg, "DHT11: %.0fC, %.0f%%\r\n", g_sensor_data.temperature, g_sensor_data.humidity);
     USART1_SendString(msg);
   }
   else
@@ -189,14 +125,15 @@ static void SendJSONResponse(uint8_t socket, char *json, int status_code)
   const char *status_text = (status_code == 200) ? "OK" : "Bad Request";
   int len;
 
+  // First, create the complete response
   len = snprintf((char*) tx_buffer, HTTP_BUFFER_SIZE, "HTTP/1.1 %d %s\r\n"
       "Content-Type: application/json\r\n"
       "Content-Length: %d\r\n"
       "Connection: close\r\n"
-      "Access-Control-Allow-Origin: *\r\n"
       "\r\n"
       "%s", status_code, status_text, (int) strlen(json), json);
 
+  // Send the complete response
   send(socket, tx_buffer, len);
 }
 
@@ -213,36 +150,24 @@ static void SendHTMLPage(uint8_t socket)
   send(socket, tx_buffer, len);
 }
 
-// Handle /api/data request
 static void HandleGetData(uint8_t socket)
 {
-  char time_str[12];    // Was 10, now 12 for safety
-  char date_str[15];    // Was 12, now 15 for safety
-  int full_year;
+  char json_buffer[200];
 
   // Read DHT11 sensor
   ReadDHT11Sensor();
 
-  // Read RTC time from DS3231
-  ReadRTCTime();
-
-  // Format time
-  full_year = 2000 + g_rtc_time.year;
-
-  snprintf(time_str, sizeof(time_str), "%02d:%02d:%02d", g_rtc_time.hour, g_rtc_time.minutes, g_rtc_time.seconds);
-  snprintf(date_str, sizeof(date_str), "%04d/%02d/%02d", full_year, g_rtc_time.month, g_rtc_time.dayofmonth);
-
+  // Create JSON string
   snprintf(
-      (char*) tx_buffer,
-      HTTP_BUFFER_SIZE,
-      "{\"temp\":%.1f,\"hum\":%.1f,\"time\":\"%s\",\"date\":\"%s\",\"sensor_valid\":%d}",
+      json_buffer,
+      sizeof(json_buffer),
+      "{\"temp\":%.1f,\"hum\":%.1f,\"sensor_valid\":%d}",
       g_sensor_data.temperature,
       g_sensor_data.humidity,
-      time_str,
-      date_str,
       g_sensor_data.valid);
 
-  SendJSONResponse(socket, (char*) tx_buffer, 200);
+  // Send the JSON response
+  SendJSONResponse(socket, json_buffer, 200);
 }
 
 // Handle LED control
