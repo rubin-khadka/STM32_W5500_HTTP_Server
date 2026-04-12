@@ -32,6 +32,9 @@
 #include "timer3.h"
 #include "i2c2.h"
 #include "lcd.h"
+#include "dht11.h"
+#include "ds3231.h"
+#include "http_server.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,6 +108,8 @@ int main(void)
   TIMER2_Init();
   USART1_Init();
   I2C2_Init();
+  DHT11_Init();
+  DS3231_Init();
   LCD_Init();
 
   // Welcome Message
@@ -130,6 +135,8 @@ int main(void)
     USART1_SendString("ERROR: W5500 initialization failed!\r\n");
     Error_Handler();
   }
+
+  HTTP_Server_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -139,6 +146,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    HTTP_Server_Run();
+    HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
