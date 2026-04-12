@@ -25,51 +25,31 @@ static uint8_t tx_buffer[HTTP_BUFFER_SIZE];
 // RTC time cache
 static DS3231_Time_t g_rtc_time;
 
-const char index_page[] = "<!DOCTYPE html>"
-    "<html>"
-    "<head>"
-    "<meta charset='UTF-8'>"
-    "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-    "<title>DHT11 Monitor</title>"
-    "<style>"
-    "body{font-family:Arial;background:#1a1a2e;color:white;text-align:center;padding:20px;margin:0}"
-    ".container{max-width:400px;margin:0 auto}"
-    ".card{background:#16213e;padding:30px;border-radius:15px;margin-top:50px}"
-    ".temp{font-size:72px;font-weight:bold;color:#e94560}"
-    ".hum{font-size:48px;font-weight:bold;color:#4CAF50;margin-top:20px}"
-    ".label{font-size:18px;color:#aaa;margin-top:10px}"
-    ".status{font-size:14px;color:#aaa;margin-top:20px}"
-    "</style>"
-    "</head>"
-    "<body>"
-    "<div class='container'>"
-    "<div class='card'>"
-    "<h1>🌡️ DHT11 Monitor</h1>"
-    "<div class='temp' id='temperature'>--°C</div>"
-    "<div class='label'>Temperature</div>"
-    "<div class='hum' id='humidity'>--%</div>"
-    "<div class='label'>Humidity</div>"
-    "<div class='status' id='status'>Loading...</div>"
-    "</div>"
-    "</div>"
-    "<script>"
-    "function updateData(){"
-    " fetch('/api/data')"
-    " .then(r=>r.json())"
-    " .then(data=>{"
-    " document.getElementById('temperature').innerHTML = data.temp + '°C';"
-    " document.getElementById('humidity').innerHTML = data.hum + '%';"
-    " document.getElementById('status').innerHTML = data.sensor_valid ? '✓ Sensor OK' : '✗ Sensor Error';"
-    " })"
-    " .catch(e=>{"
-    " document.getElementById('status').innerHTML = '✗ Connection Error';"
-    " });"
-    "}"
-    "updateData();"
-    "setInterval(updateData, 3000);"
-    "</script>"
-    "</body>"
-    "</html>";
+const char index_page[] =
+    "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>STM32</title><style>"
+        "body{background:#1a1a2e;color:#fff;text-align:center;font-family:Arial;padding:20px}"
+        ".c{background:#16213e;padding:20px;border-radius:15px;max-width:400px;margin:20px auto}"
+        ".v{font-size:48px;font-weight:bold}"
+        ".t{color:#e94560}.h{color:#4CAF50}.tm{font-size:32px}"
+        "button{padding:15px 30px;margin:10px;font-size:18px;border:none;border-radius:10px;cursor:pointer}"
+        ".on{background:#4CAF50}.off{background:#f44336}"
+        "</style></head><body>"
+        "<div class='c'><div class='tm' id='tm'>--:--:--</div><div id='dt'>----/--/--</div></div>"
+        "<div class='c'><h3>🌡️ ENVIRONMENT MONITOR</h3><div class='v t' id='tp'>--°C</div><div>Temperature</div><div class='v h' id='hm'>--%</div><div>Humidity</div></div>"
+        "<div class='c'><h3>💡 LED CONTROL</h3><button class='on' onclick='l(1)'>ON</button><button class='off' onclick='l(0)'>OFF</button><div id='ls'>LED: --</div></div>"
+        "<script>"
+        "function u(){fetch('/api/data').then(r=>r.json()).then(d=>{"
+        "document.getElementById('tp').innerHTML=d.temp+'°C';"
+        "document.getElementById('hm').innerHTML=d.hum+'%';"
+        "document.getElementById('tm').innerHTML=d.time;"
+        "document.getElementById('dt').innerHTML=d.date;"
+        "})}"
+        "function l(s){fetch(s?'/api/led/on':'/api/led/off').then(r=>r.json()).then(d=>{"
+        "document.getElementById('ls').innerHTML='LED: '+(d.state?'ON':'OFF');})}"
+        "function g(){fetch('/api/led/status').then(r=>r.json()).then(d=>{"
+        "document.getElementById('ls').innerHTML='LED: '+(d.state?'ON':'OFF');})}"
+        "u();g();setInterval(u,3000);"
+        "</script></body></html>";
 
 // Function to read DHT11 sensor using your existing driver
 static void ReadDHT11Sensor(void)
@@ -110,22 +90,12 @@ static void ReadDHT11Sensor(void)
   }
 }
 
-// Function to read RTC time using your DS3231 driver
-static void ReadRTCTime(void)
-{
-  if(DS3231_GetTime(&g_rtc_time) != DS3231_OK)
-  {
-    USART1_SendString("RTC read error!\r\n");
-  }
-}
-
 // Send HTTP response with JSON body
 static void SendJSONResponse(uint8_t socket, char *json, int status_code)
 {
   const char *status_text = (status_code == 200) ? "OK" : "Bad Request";
   int len;
 
-  // First, create the complete response
   len = snprintf((char*) tx_buffer, HTTP_BUFFER_SIZE, "HTTP/1.1 %d %s\r\n"
       "Content-Type: application/json\r\n"
       "Content-Length: %d\r\n"
@@ -133,8 +103,24 @@ static void SendJSONResponse(uint8_t socket, char *json, int status_code)
       "\r\n"
       "%s", status_code, status_text, (int) strlen(json), json);
 
-  // Send the complete response
   send(socket, tx_buffer, len);
+}
+
+// Handle LED status
+static void HandleLEDStatus(uint8_t socket)
+{
+  char json_buffer[30];
+  snprintf(json_buffer, sizeof(json_buffer), "{\"state\":%d}", g_led_state);
+  SendJSONResponse(socket, json_buffer, 200);
+}
+
+// Function to read RTC time using your DS3231 driver
+static void ReadRTCTime(void)
+{
+  if(DS3231_GetTime(&g_rtc_time) != DS3231_OK)
+  {
+    USART1_SendString("RTC read error!\r\n");
+  }
 }
 
 // Send HTML page
@@ -150,48 +136,38 @@ static void SendHTMLPage(uint8_t socket)
   send(socket, tx_buffer, len);
 }
 
+// Handle /api/data request
 static void HandleGetData(uint8_t socket)
 {
-  char json_buffer[200];
+  char json_buffer[300];
+  char time_str[12];
+  char date_str[15];
+  int full_year;
 
   // Read DHT11 sensor
   ReadDHT11Sensor();
 
-  // Create JSON string
+  // Read RTC time from DS3231
+  ReadRTCTime();
+
+  // Format time and date
+  full_year = 2000 + g_rtc_time.year;
+  snprintf(time_str, sizeof(time_str), "%02d:%02d:%02d", g_rtc_time.hour, g_rtc_time.minutes, g_rtc_time.seconds);
+  snprintf(date_str, sizeof(date_str), "%04d/%02d/%02d", full_year, g_rtc_time.month, g_rtc_time.dayofmonth);
+
+  // Create JSON string with all data
   snprintf(
       json_buffer,
       sizeof(json_buffer),
-      "{\"temp\":%.1f,\"hum\":%.1f,\"sensor_valid\":%d}",
+      "{\"temp\":%.1f,\"hum\":%.1f,\"time\":\"%s\",\"date\":\"%s\",\"sensor_valid\":%d}",
       g_sensor_data.temperature,
       g_sensor_data.humidity,
+      time_str,
+      date_str,
       g_sensor_data.valid);
 
   // Send the JSON response
   SendJSONResponse(socket, json_buffer, 200);
-}
-
-// Handle LED control
-static void HandleLEDControl(uint8_t socket, uint8_t state)
-{
-  g_led_state = state;
-  if(state)
-  {
-    LED_ON();
-  }
-  else
-  {
-    LED_OFF();
-  }
-
-  sprintf((char*) tx_buffer, "{\"state\":%d}", g_led_state);
-  SendJSONResponse(socket, (char*) tx_buffer, 200);
-}
-
-// Handle LED status
-static void HandleLEDStatus(uint8_t socket)
-{
-  sprintf((char*) tx_buffer, "{\"state\":%d}", g_led_state);
-  SendJSONResponse(socket, (char*) tx_buffer, 200);
 }
 
 // Parse incoming HTTP request
@@ -205,6 +181,26 @@ static void ParseRequest(uint8_t *buffer, char **method, char **path)
   }
 }
 
+// Handle LED control
+static void HandleLEDControl(uint8_t socket, uint8_t state)
+{
+  g_led_state = state;
+  if(state)
+  {
+    LED_ON();
+    USART1_SendString("LED turned ON\r\n");
+  }
+  else
+  {
+    LED_OFF();
+    USART1_SendString("LED turned OFF\r\n");
+  }
+
+  char json_buffer[30];
+  snprintf(json_buffer, sizeof(json_buffer), "{\"state\":%d}", g_led_state);
+  SendJSONResponse(socket, json_buffer, 200);
+}
+
 // Initialize HTTP server
 void HTTP_Server_Init(void)
 {
@@ -212,6 +208,7 @@ void HTTP_Server_Init(void)
   LED_init();
   LED_OFF();
   g_led_state = 0;
+  USART1_SendString("LED initialized\r\n");
 
   // Initialize DHT11
   DHT11_Init();
@@ -277,6 +274,7 @@ void HTTP_Server_Run(void)
             {
               HandleGetData(HTTP_SOCKET);
             }
+            // ADD THESE THREE LINES:
             else if(strcmp(path, API_LED_STATUS) == 0)
             {
               HandleLEDStatus(HTTP_SOCKET);
@@ -314,12 +312,4 @@ void HTTP_Server_Run(void)
     default:
       break;
   }
-}
-
-// Function to update sensor data
-void HTTP_UpdateSensorData(float temp, float hum, uint8_t valid)
-{
-  g_sensor_data.temperature = temp;
-  g_sensor_data.humidity = hum;
-  g_sensor_data.valid = valid;
 }

@@ -14,7 +14,7 @@
 // HTTP Server Configuration
 #define HTTP_SOCKET         0
 #define HTTP_PORT           80
-#define HTTP_BUFFER_SIZE    4096
+#define HTTP_BUFFER_SIZE    5000
 
 // API Endpoints
 #define API_DATA            "/api/data"
@@ -25,9 +25,6 @@
 // Function Prototypes
 void HTTP_Server_Init(void);
 void HTTP_Server_Run(void);
-
-// Sensor data update functions
-void HTTP_UpdateSensorData(float temp, float hum, uint8_t valid);
 
 // Sensor data structure
 typedef struct
