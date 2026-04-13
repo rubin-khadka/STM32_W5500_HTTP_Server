@@ -78,10 +78,6 @@ static void ReadDHT11Sensor(void)
     g_sensor_data.humidity = bytes[0];
     g_sensor_data.temperature = bytes[2];
     g_sensor_data.valid = 1;
-
-    char msg[50];
-    sprintf(msg, "DHT11: %.0fC, %.0f%%\r\n", g_sensor_data.temperature, g_sensor_data.humidity);
-    USART1_SendString(msg);
   }
   else
   {

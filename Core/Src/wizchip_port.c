@@ -153,7 +153,7 @@ int W5500_Init(void)
 
   // Wait for DHCP to get IP (max 10 seconds)
   ip_assigned = false;
-  retries = 20;  // 20 × 500ms = 10 seconds
+  retries = 4;  // 20 × 500ms = 10 seconds
   while((!ip_assigned) && (retries > 0))
   {
     DHCP_run();

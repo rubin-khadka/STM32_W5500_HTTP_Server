@@ -31,7 +31,6 @@
 #include "timer2.h"
 #include "timer3.h"
 #include "i2c2.h"
-#include "lcd.h"
 #include "dht11.h"
 #include "ds3231.h"
 #include "http_server.h"
@@ -110,28 +109,17 @@ int main(void)
   I2C2_Init();
   DHT11_Init();
   DS3231_Init();
-  LCD_Init();
 
   // Welcome Message
   USART1_SendString("============================\r\n");
   USART1_SendString("STM32 Project Initialization\r\n");
   USART1_SendString("============================\r\n");
 
-  LCD_Clear();
-  LCD_SendString("STM32 PROJECT");
-  LCD_SetCursor(1, 0);
-  LCD_SendString("INITIALIZING...");
-
   DWT_Delay_ms(2000);
 
   // Initialize W5500 with DHCP
   if(W5500_Init() != 0)
   {
-    LCD_Clear();
-    LCD_SetCursor(0, 0);
-    LCD_SendString("Network Error!");
-    LCD_SetCursor(1, 0);
-    LCD_SendString("Check Ethernet");
     USART1_SendString("ERROR: W5500 initialization failed!\r\n");
     Error_Handler();
   }
