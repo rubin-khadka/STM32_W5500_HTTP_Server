@@ -31,6 +31,8 @@ Demonstrates web dashboard with real-time sensor data and LED control
 
 ## Project Schematic
 
+<img width="1307" height="657" alt="Schematic Diagram" src="https://github.com/user-attachments/assets/7d06b315-dcaa-4878-81db-c4dd8a902b1a" />
+
 ## Pin Configuration
 | Peripheral | Pin | Connection | Notes |
 |------------|-----|------------|-------|
